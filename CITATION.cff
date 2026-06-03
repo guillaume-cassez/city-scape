@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+title: "Boundary Loss Ablation for Full-Resolution Cityscapes Segmentation: When Dice Helps and When It Doesn't"
+message: "If you use this work, please cite it as below."
+type: software
+authors:
+  - given-names: Guillaume
+    family-names: Cassez
+    email: cassez.guillaume@gmail.com
+    website: "https://guillaume-cassez.fr"
+    orcid: "https://orcid.org/0009-0007-0987-3931"
+repository-code: "https://github.com/guillaume-cassez/city-scape"
+url: "https://guillaume-cassez.fr/voiture-autonome/cityscapes/boundary-loss-kervadec/"
+license: MIT
+date-released: "2026-06-02"
+keywords:
+  - Cityscapes
+  - semantic segmentation
+  - boundary loss
+  - Kervadec
+  - Dice loss
+  - loss function ablation
+  - ConvNeXt-V2
+  - UPerNet
+  - full-resolution training
+  - urban scene understanding
+  - autonomous driving
+  - deep learning
+  - computer vision
+abstract: >-
+  A reproducible 2x2 ablation of the cross-entropy / Dice / Kervadec boundary
+  loss design space for full-resolution semantic segmentation on Cityscapes.
+  Four loss configurations (A: CE; B: CE+Dice; C: CE+Dice+Boundary;
+  D: CE+Boundary) are trained for 160 epochs across three random seeds each,
+  with checkpoint evaluation at every saved epoch. At epoch 10 the joint
+  formulation C clearly dominates (+2.26 mIoU over B). At epoch 160 the
+  boundary-only variant D takes the lead with 81.69 +/- 0.12 mIoU and
+  58.67 +/- 0.11 Boundary F1, while B retains the Trimap IoU advantage
+  (49.02 +/- 0.28). The Dice term acts as an early-training regulariser that
+  holds back late convergence on large structured classes. Per-class breakdown
+  shows D dominates large structured classes (truck +5.29, wall +3.73,
+  bus +2.37 mIoU vs B) while B preserves thin signal-rich classes
+  (traffic light +2.10, train +1.10, traffic sign +0.86 mIoU vs D).
+  The most actionable finding is methodological: short-epoch ablations are
+  systematically misleading on this task, reversing the ranking that holds
+  at 160 epochs.
