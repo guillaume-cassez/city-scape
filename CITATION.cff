@@ -10,8 +10,9 @@ authors:
     orcid: "https://orcid.org/0009-0007-0987-3931"
 repository-code: "https://github.com/guillaume-cassez/city-scape"
 url: "https://guillaume-cassez.fr/voiture-autonome/cityscapes/boundary-loss-kervadec/"
+doi: 10.5281/zenodo.20528681
 license: MIT
-date-released: "2026-06-02"
+date-released: "2026-06-03"
 keywords:
   - Cityscapes
   - semantic segmentation

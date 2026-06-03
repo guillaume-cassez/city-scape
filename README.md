@@ -6,6 +6,7 @@ Code, configs, per-epoch metrics, figures, and paper source for a controlled 2×
 
 [![paper page](https://img.shields.io/badge/%F0%9F%93%84_paper_landing-guillaume--cassez.fr-blue)](https://guillaume-cassez.fr/voiture-autonome/cityscapes/boundary-loss-kervadec/)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20528681.svg)](https://doi.org/10.5281/zenodo.20528681)
 
 ---
 
@@ -143,11 +144,12 @@ The CSV in `data/pilot_results.csv` is the ground truth that powers every figure
   author = {Cassez, Guillaume},
   year   = {2026},
   url    = {https://guillaume-cassez.fr/voiture-autonome/cityscapes/boundary-loss-kervadec/},
+  doi    = {10.5281/zenodo.20528681},
   note   = {Independent research}
 }
 ```
 
-A Zenodo DOI will be assigned upon archival publication.
+Permanent archive: [10.5281/zenodo.20528681](https://doi.org/10.5281/zenodo.20528681).
 
 ---
 
