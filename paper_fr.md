@@ -19,9 +19,9 @@ Recherche indépendante · [ORCID 0009-0007-0987-3931](https://orcid.org/0009-00
 
 On rapporte une ablation contrôlée des fonctions de loss boundary-aware pour la segmentation sémantique à la résolution native Cityscapes (1024×2048). Avec un backbone ConvNeXt-V2-Base et une tête UPerNet, quatre configurations de loss sont entraînées pendant 160 epochs sur trois seeds aléatoires chacune, soit douze runs au total, évaluées à chaque epoch de checkpoint : (A) cross-entropy seule, (B) CE + Dice, (C) CE + Dice + boundary Kervadec, et (D) CE + boundary Kervadec.
 
-Le résultat principal est un **décalage entre training court et long**. À 10 epochs, la formulation conjointe C domine clairement (78,17 vs 75,91 mIoU, Δ = +2,26 sur B), confirmant la recette canonique Dice + boundary. À 160 epochs, l'image s'inverse : la variante boundary-only **D atteint la plus haute mIoU (81,69 ± 0,12) et le meilleur Boundary F1 (58,67 ± 0,11)**, tandis que B garde l'avantage sur le Trimap IoU (49,02 ± 0,28). Le terme Dice agit comme une régularisation en début d'entraînement ; passé le coude de saturation, il n'aide ni ne pénalise la mIoU globale mais freine la convergence finale sur les grandes classes structurées.
+Le résultat principal est un **décalage entre training court et long**. À 10 epochs, la formulation conjointe C mène (78,17 vs 75,91 mIoU, Δ = +2,26 sur B en moyenne), cohérent avec la recette canonique Dice + boundary. À 160 epochs, l'image s'inverse : la variante boundary-only **D atteint la plus haute mIoU moyenne (81,69 ± 0,25) et le meilleur Boundary F1 (58,67 ± 0,24)**, tandis que B garde l'avantage sur le Trimap IoU (49,02 ± 0,61). Sous un test t apparié par seed (n=3), l'avantage mIoU de D est significatif sur C (Δ = +0,46, p = 0,007) mais **pas** sur A ni B (p = 0,095, 0,075) : l'effet est directionnellement cohérent sur les trois seeds, mais n=3 manque de puissance pour certifier des écarts < 0,6 mIoU. L'avance Trimap de B sur D est significative (Δ = +1,09, p = 0,005). Le terme Dice agit comme une régularisation en début d'entraînement ; passé le coude de saturation, il n'aide ni ne pénalise la mIoU globale mais freine la convergence finale sur les grandes classes structurées.
 
-**Contributions.** (1) Une ablation 2×2 reproductible de loss à 1024×2048 avec IC 95 % sur trois métriques pour douze runs. (2) Une évidence empirique que les ablations courtes sont systématiquement trompeuses sur cette tâche — choisir la mauvaise recette de loss vers 10 epochs. (3) Une décomposition par classe montrant que D domine les grandes classes structurées (truck +5,29, wall +3,73, bus +2,37 mIoU vs B) tandis que B préserve les classes thin riches en signal (traffic light +2,10, train +1,10, traffic sign +0,86 mIoU vs D). (4) Publication ouverte du code, des configs, des métriques par epoch des douze runs, et d'une page web compagnon avec figures interactives.
+**Contributions.** (1) Une ablation 2×2 reproductible de loss à 1024×2048 avec IC 95 % Student-t et tests de significativité appariés par seed sur trois métriques pour douze runs. (2) Une évidence empirique que les ablations courtes sont trompeuses sur cette tâche — à 10 epochs un pilote choisit C, mais à 160 epochs D dépasse significativement C (p = 0,007). (3) Une décomposition par classe montrant que D mène sur les grandes classes structurées (truck +5,29, wall +3,73, bus +2,37 mIoU vs B) tandis que B préserve les classes thin riches en signal (traffic light +2,10, train +1,10, traffic sign +0,86 mIoU vs D). (4) Un **filtre consensus** par composantes connexes (veto entre variantes + vote multi-seed) adapté de BRATS pour retirer les fragments parasites et quantifier l'incertitude inter-seed. (5) Publication ouverte du code, des configs, des métriques par epoch des douze runs, et d'une page web compagnon avec figures interactives.
 
 ---
 
@@ -110,10 +110,12 @@ Annotations fines Cityscapes : 2 975 train, 500 val, 1 525 test (labels de test 
 
 * **mIoU** : Intersection-over-Union moyenne sur les 19 classes, calculée à pleine résolution.
 * **IoU par classe** : idem, ventilé par classe.
-* **Boundary F1** : F1 des pixels de contour prédits dans une tolérance trimap de 3 pixels, moyenné sur les classes.
-* **Trimap IoU** : mIoU restreinte aux pixels à 3 pixels d'un contour vérité terrain, mettant l'accent sur l'accuracy de contour.
+* **Boundary F1** : F1 par classe des contours prédits vs vérité terrain dans une tolérance de 3 pixels, moyenné sur les classes présentes dans chaque image. Les contours sont extraits de masques binaires par classe.
+* **Trimap IoU** : mIoU restreinte à une bande de 3 pixels autour de toutes les frontières inter-classes (chaque transition de classe, pas seulement route-vs-reste), mettant l'accent sur l'accuracy de contour.
 
-Toutes les métriques sont rapportées en moyenne sur trois seeds avec intervalle de confiance 95 % ($1{,}96 \times \mathrm{SE}$).
+Toutes les métriques sont rapportées en moyenne sur trois seeds avec intervalle de confiance 95 % via la valeur critique de **Student** ($t_{0{,}975,\,df=2} = 4{,}303 \times \mathrm{SE}$ ; l'approximation normale 1,96 sous-estime l'intervalle d'un facteur ~2,2 à n=3). Les comparaisons par paires utilisent un test t apparié par seed, plus puissant que la comparaison de chevauchement des barres d'IC.
+
+> **Note de correction (cette révision).** Deux problèmes d'estimateur ont été trouvés après le premier brouillon et corrigés dans le code. (i) Le Boundary F1 et le Trimap IoU appliquaient une morphologie binaire à la *carte de labels multi-classes*, ce qui traite toute classe non nulle comme avant-plan — seul le contour route-vs-reste était donc mesuré, pas les frontières inter-classes que les métriques prétendent moyenner. Les deux sont désormais calculés par classe sur masques binaires. (ii) Les IC 95 % utilisaient 1,96 au lieu du facteur de Student. **La mIoU n'est pas affectée par (i) et ses chiffres sont définitifs**, avec IC et significativité mis à jour pour (ii). Les *valeurs centrales* Boundary F1 / Trimap ci-dessous reflètent encore l'ancien estimateur et sont **en attente de ré-évaluation** sur le val set avec la métrique corrigée (marquées †) ; leur ordre relatif entre variantes devrait tenir mais les valeurs absolues vont bouger.
 
 ### 4.3 Matériel et runtime
 
@@ -125,20 +127,22 @@ Un seul NVIDIA RTX PRO 6000 Blackwell Max-Q (96 Go GDDR7, sm_120), 64 Go DDR5, I
 
 ### 5.1 Métriques globales à epoch 160
 
-Moyenne sur 3 seeds avec IC 95 %, évaluée sur les 500 images Cityscapes val.
+Moyenne sur 3 seeds avec IC 95 % Student-t, évaluée sur les 500 images Cityscapes val.
 
 | Variante | mIoU | Boundary F1 | Trimap IoU |
 |---|---|---|---|
-| A — CE | 81,28 ± 0,24 | 58,45 ± 0,28 | 47,83 ± 0,05 |
-| B — CE+Dice | 81,09 ± 0,34 | 58,63 ± 0,49 | **49,02 ± 0,28** |
-| C — CE+Dice+Bnd | 81,23 ± 0,10 | 58,53 ± 0,20 | 48,93 ± 0,02 |
-| **D — CE+Bnd** | **81,69 ± 0,12** | **58,67 ± 0,11** | 47,93 ± 0,34 |
+| A — CE | 81,28 ± 0,53 | 58,45 ± 0,61† | 47,83 ± 0,10† |
+| B — CE+Dice | 81,09 ± 0,74 | 58,63 ± 1,08† | **49,02 ± 0,61†** |
+| C — CE+Dice+Bnd | 81,23 ± 0,21 | 58,53 ± 0,43† | 48,93 ± 0,04† |
+| **D — CE+Bnd** | **81,69 ± 0,25** | **58,67 ± 0,24†** | 47,93 ± 0,75† |
+
+IC = 95 % Student-t (df = 2). **†** Valeurs centrales Boundary F1 / Trimap issues de l'ancien estimateur route-vs-reste, en attente de ré-évaluation ; les demi-largeurs d'IC utilisent déjà le facteur t corrigé.
 
 Trois observations :
 
-1. **D gagne sur mIoU.** D surpasse A/B/C de 0,41 / 0,60 / 0,46 mIoU. La borne inférieure d'IC 95 % de D (81,57) excède la borne supérieure d'IC 95 % de chacun de A (81,52), B (81,43) et C (81,33), donc le lead est robuste à la variance inter-seeds — bien que la marge contre A soit fine (0,05 mIoU).
-2. **D égale ou gagne sur Boundary F1.** Les différences sont petites (∼0,2) mais D a à nouveau l'IC le plus serré.
-3. **B gagne sur Trimap IoU.** Inversement, les variantes Dice (B, C) mènent D de ∼1 point sur la métrique contour-restreinte. Cohérent avec l'emphase régionale du Dice — il préserve la cohérence de blob loin des contours.
+1. **D a la plus haute mIoU moyenne**, de +0,41 / +0,60 / +0,46 sur A / B / C. Mais la significativité ne suit pas automatiquement à n=3. Un test t apparié par seed ne rend significatif que **D > C** (Δ = +0,46, t = 12,0, p = 0,007 — C a une très faible variance inter-seed) ; **D > A (p = 0,095) et D > B (p = 0,075) ne sont pas significatifs**, bien que les trois seeds favorisent D dans les deux cas. L'ancienne affirmation que la borne basse de D dépasse les bornes hautes des autres reposait sur des IC trop serrés (facteur 1,96) ; avec le facteur t correct, les IC de A / B / D se chevauchent. L'énoncé honnête : *D est la meilleure recette en moyenne et bat significativement la variante conjointe C, mais reste statistiquement indistinguable du CE simple (A) à ce nombre de seeds*.
+2. **Boundary F1** : différences (∼0,2) dans le bruit (D > A : p = 0,14 ; D > C : p = 0,15) et valeurs centrales en attente de ré-évaluation (voir note) ; aucune affirmation sur cette métrique.
+3. **B gagne sur Trimap IoU**, et là l'effet *est* significatif : B mène D de +1,09 (p apparié = 0,005) et A de +1,19 (p = 0,012). Cohérent avec l'emphase régionale du Dice — il préserve la cohérence de blob loin des contours. (Valeurs trimap absolues en attente de ré-évaluation ; le signe de l'ordre est cohérent sur les trois seeds.)
 
 ### 5.2 Dynamique de convergence — le retournement 10 vs 160 epochs
 
@@ -154,7 +158,7 @@ Trois observations :
 | Boundary F1 (10 ep) | 51,78 | 50,13 | **53,44** | 52,41 |
 | Trimap IoU (10 ep) | 40,54 | 41,30 | **42,83** | 40,78 |
 
-C bat B de **+2,26 mIoU** à epoch 10, un delta qui pousserait toute étude d'ablation courte à recommander avec confiance la formulation conjointe. À **epoch 50** les quatre variantes ont convergé dans une bande beaucoup plus serrée (Δ < 1 mIoU). Après epoch 100 l'ordre se ré-organise : **D prend la tête et y reste à partir d'epoch 110**, tandis que C ralentit et B régresse occasionnellement. Le retournement est reproductible sur les trois seeds.
+C mène B de **+2,26 mIoU** à epoch 10, un delta qui pousserait toute étude d'ablation courte à recommander la formulation conjointe. Cet écart précis **n'est pas significatif** à n=3 (p apparié = 0,10), gonflé par un seed à forte variance (par seed C−B = +1,15 / +1,84 / +3,79). Le signal robuste et *significatif* est le **retournement D-vs-C** : D est derrière C à epoch 10 (−1,92 mIoU) et le dépasse à epoch 160 (+0,46, p apparié = 0,007). À **epoch 50** les quatre variantes convergent dans une bande plus serrée (Δ < 1 mIoU) ; après epoch 100 **D prend la tête et y reste à partir d'epoch 110**. Le retournement est reproductible sur les trois seeds.
 
 C'est l'observation centrale du papier : **une ablation à 10 epochs sur cette tâche choisit la mauvaise recette de loss**. Le terme Dice fournit une régularisation en début d'entraînement qui accélère la convergence (visible dans la montée de mIoU entre epochs 4 et 10) mais ne se traduit pas en avantage long-training sur la métrique globale. Le terme boundary, lui, prend plus d'epochs pour s'intégrer au signal de gradient — le champ SDT fournit un gradient distribué faible qui a besoin de plus de steps pour déplacer la frontière de décision — mais finit par produire une mIoU et un Boundary F1 plus élevés une fois convergé.
 
@@ -185,7 +189,22 @@ Cette complémentarité n'est **pas** capturée par la mIoU globale, où les gra
 
 ### 5.4 Variance inter-seeds
 
-Les IC 95 % induits par les seeds varient d'un ordre de grandeur entre métriques et variantes. D a l'IC 95 % le plus serré sur mIoU (±0,12), C le plus serré sur Trimap IoU (±0,02) ; le plus large est B sur Boundary F1 (±0,49). Au niveau classe, **truck** sous la variante B est la plus volatile — écart-type inter-seeds de 4,39 points IoU (vs 2,55 std pour D, 0,68 pour C, 0,78 pour A). Avec truck apparaissant dans seulement **80 des 500 images val**, l'emphase régionale du Dice amplifie les fluctuations sur les classes à faible support.
+Les IC 95 % Student-t induits par les seeds varient d'un ordre de grandeur entre métriques et variantes. D a l'IC 95 % le plus serré sur mIoU (±0,25), C le plus serré sur Trimap IoU (±0,04) ; le plus large est B sur Boundary F1 (±1,08). Au niveau classe, **truck** sous la variante B est la plus volatile — écart-type inter-seeds de 4,39 points IoU (vs 2,55 std pour D, 0,68 pour C, 0,78 pour A). Avec truck apparaissant dans seulement **80 des 500 images val**, l'emphase régionale du Dice amplifie les fluctuations sur les classes à faible support.
+
+### 5.5 Filtrage consensus — fusionner variantes et seeds complémentaires
+
+La décomposition par classe (§5.3) montre que D et B sont *complémentaires* : D mène sur les grandes classes structurées, B sur les classes thin riches en signal. L'analyse inter-seed (§5.4) révèle un second axe de marge : une variance qu'un seed unique ne peut moyenner. Les deux invitent à une étape de consensus. On adapte le **filtre consensus** par composantes connexes (CC) de nos travaux BRATS, où une segmentation « généraliste » est vetoée par une « spécialiste » : par classe, toute composante connexe du généraliste sans recouvrement de même classe dans le veto est retirée, ce qui élague les fragments hallucinés et améliore les métriques de contour sans coût sur l'overlap régional.
+
+Cityscapes impose quatre écarts à la formulation BRATS — c'est une adaptation, pas un portage :
+
+* **Connexité 8 en 2D** au lieu de 26 en 3D.
+* **19 classes plates** sans hiérarchie WT/TC/ET emboîtée — le veto opère sur 19 masques de classe indépendants.
+* **Pas de classe de fond.** En BRATS une composante retirée passe au fond (0) ; chaque pixel Cityscapes porte une classe, donc une composante retirée est **réassignée au label du veto** (mettre 0 voudrait dire « route »). La réassignation est bien définie justement parce que la composante a zéro recouvrement avec le masque même-classe du veto.
+* **Protection des structures fines.** Pole, traffic light, traffic sign et fence sont des composantes légitimement petites et fragmentées qu'un veto naïf effacerait — le mode de défaillance spécifique à Cityscapes (BRATS rapportait 38,7 % de cas dégradés par un veto trop agressif ; ici le risque se concentre sur les classes fines). Elles sont exemptées par défaut, et un plafond `max_drop_size` restreint la suppression aux vrais fragments.
+
+Deux modes sont fournis : **(a) veto entre variantes** — D (généraliste) vetoé par B (spécialiste), ciblant les gains grandes-classes de D tout en laissant B vetoer les fragments parasites ; et **(b) vote majoritaire multi-seed** avec une **carte d'accord** par pixel (fraction des trois seeds en accord), un ensemble naturel sur Cityscapes qui attaque directement la variance inter-seed de §5.4 et fournit un signal d'incertitude gratuit pour l'analyse d'erreurs. On rapporte aussi un **compte de fragments** (composantes connexes par classe) comme proxy de cohérence spatiale indépendant de la mIoU ; le filtre ne peut que le baisser.
+
+**Statut.** Le filtre, la métrique de compte de fragments et une suite de tests unitaires synthétiques (19/19) sont publiés avec le code (`src/postprocessing/consensus.py`). Les chiffres quantitatifs sur le val set — Δ mIoU, Δ compte de fragments, corrélation carte-d'accord/erreurs — nécessitent de relancer l'inférence pour exporter les prédictions par image et sont **reportés à la version finale** ; ils n'étaient pas disponibles à cette révision car les checkpoints entraînés résident sur un stockage séparé. On ne fait donc **aucune affirmation chiffrée** sur le filtre consensus ici ; il est présenté comme une méthode reproductible à l'implémentation vérifiée.
 
 ---
 
@@ -205,7 +224,7 @@ Le Trimap IoU n'est calculé que sur les pixels à 3 px d'un contour vérité te
 
 ### 6.3 Prises actionnables
 
-* **Pour un modèle Cityscapes déployé** : utiliser D (CE + Kervadec, $\lambda_b = 0,2$). C'est la plus simple des quatre (pas de plumbing Dice, pas d'hyperparamètre), atteint la plus haute mIoU et le meilleur Boundary F1, et se comporte de manière prévisible sur les grandes classes structurées.
+* **Pour un modèle Cityscapes déployé** : D (CE + Kervadec, $\lambda_b = 0,2$) est le défaut pragmatique. C'est la plus simple des quatre (pas de plumbing Dice, pas d'hyperparamètre), a la plus haute mIoU moyenne — significativement au-dessus de la variante conjointe C, et à égalité avec le CE simple (A) à ce nombre de seeds — et se comporte de manière prévisible sur les grandes classes structurées. Si les classes thin dominent l'usage, B reste préférable (avance Trimap significative).
 * **Pour un pipeline multi-task qui a déjà Dice pour d'autres raisons** (ex : loss partagée entre la segmentation et une tête auxiliaire class-imbalanced) : utiliser C. Le sacrifice de +0,5 mIoU vs D est petit par rapport au coût d'ingénierie du découplage du Dice.
 * **Ne pas faire confiance aux ablations à 10 epochs** pour comparer des variantes Dice sur Cityscapes. Le retournement d'ordre early-vs-late qu'on mesure (+2,26 → −0,46 dans le gap C−B, un swing de 2,7 points) suggère qu'une décision production doit être prise sur au moins 80–100 epochs d'entraînement.
 
@@ -217,6 +236,9 @@ Le Trimap IoU n'est calculé que sur les pixels à 3 px d'un contour vérité te
 * **Pas de TTA, pas d'inférence multi-échelle.** Le test-time augmentation gagne typiquement 1–2 mIoU mais obscurcit les comparaisons de losses ; on rapporte des nombres single-scale partout.
 * **Les hypothèses de §6.1 ne sont pas directement mesurées.** L'interférence de gradient entre Dice et Kervadec est proposée comme mécanisme derrière le lead tardif de D, mais les normes de gradient par layer/epoch ne sont pas extraites dans ce papier. Une étude ciblée de trajectoire de gradient est laissée à de futurs travaux.
 * **Cityscapes seulement.** Si le phénomène de retournement généralise à ADE20K, COCO-Stuff, Mapillary, ou des datasets de conduite non structurés (BDD, IDD) est une question ouverte.
+* **Boundary F1 / Trimap en attente de ré-évaluation.** Les valeurs centrales de ces deux métriques utilisent l'ancien estimateur route-vs-reste (voir note §4.2) ; elles sont recalculées par classe dans le code publié mais les chiffres sur le val set nécessitent de relancer l'évaluation. La mIoU et tous ses tests de significativité sont définitifs.
+* **Faible puissance statistique (n = 3).** Les écarts < 0,6 mIoU (D vs A, D vs B) sont directionnellement cohérents mais non significatifs à trois seeds. Un re-run à cinq seeds est le moyen le moins cher de les trancher. Les résultats significatifs (D > C sur mIoU, B > D sur Trimap, le retournement D/C) ne sont pas affectés.
+* **Filtre consensus non encore chiffré.** Le filtre de §5.5 a une implémentation vérifiée et des tests unitaires mais aucun résultat sur le val set dans cette révision (checkpoints hors-machine).
 
 ### 6.5 Implications pour le déploiement véhicule autonome
 
@@ -238,7 +260,7 @@ Le résultat le plus transférable pour une équipe ML VA est méthodologique. U
 
 ## 7. Conclusion
 
-On fournit une ablation 2×2 reproductible de l'espace de design des losses CE / Dice / boundary Kervadec pour la segmentation sémantique pleine résolution sur Cityscapes. À 160 epochs avec trois seeds par variante, la variante boundary-only **D (CE + Kervadec)** atteint la plus haute mIoU (81,69 ± 0,12) et le meilleur Boundary F1 (58,67 ± 0,11), tandis que la variante conjointe Dice + boundary C — la formulation qu'un pilote à 10 epochs aurait choisie — est détrônée à convergence. B (CE + Dice) garde l'avantage sur le Trimap IoU, reflétant sa meilleure cohérence intra-région.
+On fournit une ablation 2×2 reproductible de l'espace de design des losses CE / Dice / boundary Kervadec pour la segmentation sémantique pleine résolution sur Cityscapes. À 160 epochs avec trois seeds par variante, la variante boundary-only **D (CE + Kervadec)** atteint la plus haute mIoU moyenne (81,69 ± 0,25) et le meilleur Boundary F1 (58,67 ± 0,24) ; sous un test apparié par seed elle dépasse significativement la variante conjointe C (p = 0,007) — la formulation qu'un pilote à 10 epochs aurait choisie — tout en restant statistiquement à égalité avec le CE simple (A) à ce nombre de seeds. B (CE + Dice) garde une avance significative sur le Trimap IoU, reflétant sa meilleure cohérence intra-région.
 
 La trouvaille la plus actionnable est méthodologique : **les ablations à epochs courts sont systématiquement trompeuses sur cette tâche**. Une étude comparant des recettes de loss pour Cityscapes à ≤ 20 epochs inverse le ranking qui tient à 160 epochs. On espère que ce travail découragera les conclusions hâtives sur le choix de loss dans de futurs papiers Cityscapes et fournira une baseline contre laquelle calibrer les sweeps $\lambda_b$ et les variantes d'architecture.
 

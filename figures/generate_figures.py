@@ -13,6 +13,7 @@ from pathlib import Path
 from collections import defaultdict
 
 import numpy as np
+from scipy import stats
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -47,12 +48,20 @@ def load_run(prefix, seed):
 
 
 def mean_ci(values):
+    """Mean and 95% CI half-width using the Student-t critical value.
+
+    With n=3 seeds the normal approximation (1.96) under-estimates the CI by
+    ~2.2x: the correct factor is t_{0.975, df=n-1} = 4.303 for n=3. Using 1.96
+    produced spuriously tight intervals and unsupported significance claims.
+    """
     arr = np.array(values, dtype=float)
     mu = arr.mean()
-    if len(arr) <= 1:
+    n = len(arr)
+    if n <= 1:
         return mu, 0.0
-    se = arr.std(ddof=1) / np.sqrt(len(arr))
-    return mu, 1.96 * se
+    se = arr.std(ddof=1) / np.sqrt(n)
+    tcrit = stats.t.ppf(0.975, df=n - 1)
+    return mu, tcrit * se
 
 
 def build_curves():
