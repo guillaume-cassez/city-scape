@@ -3,7 +3,7 @@
 Aggregate per-seed metrics into the paper's final table + a significance table.
 
 Reads results/pilot_results.csv (repo-local, robust — no dependency on the
-Tower's .results.json paths) and writes, under papers/paper1/figures/:
+Tower's .results.json paths) and writes, under papers/paper2/figures/:
   - table_final.csv         : mean + 95% CI (Student-t, df=n-1) at epoch 160
   - table_significance.csv  : paired-by-seed t-tests for the key comparisons
 
@@ -30,7 +30,7 @@ HERE = Path(__file__).resolve().parent
 # or the dev repo (results/ at the project root).
 _CANDIDATES = [
     HERE.parent / "data" / "pilot_results.csv",       # bundle: repo/data/
-    HERE.parents[2] / "results" / "pilot_results.csv",  # dev: papers/paper1/.. -> repo/results
+    HERE.parents[2] / "results" / "pilot_results.csv",  # dev: papers/paper2/.. -> repo/results
     HERE.parents[3] / "results" / "pilot_results.csv",
     HERE.parent / "results" / "pilot_results.csv",
 ]

@@ -8,7 +8,7 @@ Code, configs, per-epoch metrics, figures, and paper source for a controlled 2×
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20528680.svg)](https://doi.org/10.5281/zenodo.20528680)
 
-> **v0.2.0 erratum.** This release corrects two estimator bugs in v0.1.0: Boundary F1 / Trimap IoU now run **per class** (v0.1.0 measured only the road-vs-rest contour), and 95% CIs use the **Student-t** factor instead of 1.96 (n=3). **mIoU is unchanged and final.** The "D is best on mIoU" headline is softened — D significantly beats C (p=0.007) but is a statistical tie with plain CE (A) at n=3; Boundary F1 / Trimap central values are pending re-evaluation. Details in [CHANGELOG.md](CHANGELOG.md).
+> **v0.2.0 erratum.** This release corrects two estimator bugs in v0.1.0: Boundary F1 / Trimap IoU now run **per class** (v0.1.0 measured only the road-vs-rest contour) and **all twelve runs were re-evaluated on the val set**, and 95% CIs use the **Student-t** factor instead of 1.96 (n=3), with Holm-corrected significance. **mIoU is unchanged and is now validated bit-for-bit against the official `cityscapesscripts` evaluation.** The "D is best on mIoU" headline is softened — D significantly beats C (p=0.007) but is a statistical tie with plain CE (A) at n=3. The corrected contour metrics split along the Dice axis (non-Dice A, D lead Boundary F1; Dice B, C lead Trimap IoU), so the v0.1.0 contour numbers should not be cited. Details in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -16,7 +16,7 @@ Code, configs, per-epoch metrics, figures, and paper source for a controlled 2×
 
 The setup is narrow on purpose: take the canonical CE + Dice recipe used on Cityscapes, drop Kervadec's MIDL 2019 boundary term on top, and watch four variants (A: CE, B: CE+Dice, C: CE+Dice+Bnd, D: CE+Bnd) for 160 epochs across three seeds each — twelve runs total, evaluated at every checkpoint. At ten epochs, variant C beats B by **+2.26 mIoU**. A short pilot would stop there and call it: ship the Dice + Boundary recipe.
 
-That answer stops being right past epoch 100. Letting all four variants run their full course reshuffles the ranking. Variant D (CE + Boundary, **no Dice**) overtakes everyone from epoch 110 onwards and ends at **81.69 ± 0.25 mIoU** and **58.67 ± 0.24 Boundary F1** — both the highest of the four in the mean. A paired-by-seed test (n=3) makes D's win over the joint variant C significant (p=0.007), while D vs plain CE (A) is a statistical tie (p=0.095); C is dethroned at convergence. B keeps a **significant** lead on Trimap IoU (p=0.005), the contour-narrowed metric that rewards intra-region coherence over edge accuracy.
+That answer stops being right past epoch 100. Letting all four variants run their full course reshuffles the ranking. Variant D (CE + Boundary, **no Dice**) overtakes everyone from epoch 110 onwards and ends at **81.69 ± 0.25 mIoU** and **77.32 ± 0.13 Boundary F1** — both the highest of the four in the mean. A paired-by-seed test (n=3, Holm-corrected) makes D's win over the joint variant C significant (p=0.007), while D vs plain CE (A) is a statistical tie (p=0.095); C is dethroned at convergence. The two contour metrics split along the Dice axis: the non-Dice variants (A, D) lead **Boundary F1** (D − B = +0.93; Holm p ≤ 0.011) while the Dice variants (B, C) lead **Trimap IoU** (B − D = +1.57, C − D = +1.62; Holm p ≤ 0.012) — Dice trades edge sharpness for intra-region coherence near contours.
 
 The headline is not "use D"; it's the **methodological warning** below it. The C−B gap swings by 2.7 mIoU points between the two training horizons — a magnitude that easily flips a production decision. Per-class breakdown explains the swing: D wins big on large structured classes (truck +5.29, wall +3.73, bus +2.37 mIoU vs B), while B retains thin signal-rich classes (traffic light +2.10, train +1.10, traffic sign +0.86 mIoU vs D). The Dice term works as early regularisation that holds back late-stage convergence on the bulk classes — and bulk classes dominate mIoU, so the long-training picture flips on the global metric.
 
@@ -26,13 +26,13 @@ The headline is not "use D"; it's the **methodological warning** below it. The C
 
 1. **At 10 epochs on Cityscapes val**, the joint formulation C (CE + Dice + Boundary) leads (mIoU 78.17, +2.26 over B in the mean). A short ablation would recommend it.
 
-2. **At 160 epochs**, D (CE + Boundary, no Dice) has the highest mean mIoU (81.69 ± 0.25) and Boundary F1 (58.67 ± 0.24). Significance (paired by seed, n=3): D > C is significant (p=0.007), D > A is not (p=0.095); B keeps a significant Trimap IoU lead (49.02 ± 0.61, p=0.005). The Dice term acts as early regularisation that does not translate into long-training gains on the global metric.
+2. **At 160 epochs**, D (CE + Boundary, no Dice) has the highest mean mIoU (81.69 ± 0.25) and Boundary F1 (77.32 ± 0.13). Significance (paired by seed, n=3, Holm-corrected): D > C is significant (p=0.007), D > A is not (p=0.095). The contour metrics split along the Dice axis — the non-Dice variants (A, D) lead Boundary F1, the Dice variants (B 53.82, C 53.87) lead Trimap IoU by ≈ +1.6 over A and D (Holm p ≤ 0.012). The Dice term acts as early regularisation that does not translate into long-training gains on the global metric.
 
 3. **Per-class breakdown explains the swing.** D dominates large structured classes (truck +5.29, wall +3.73, bus +2.37 mIoU vs B) where the SDT field provides a consistent gradient. B preserves thin signal-rich classes (traffic light +2.10, train +1.10, traffic sign +0.86 mIoU vs D) where Dice anchors small footprints against CE class imbalance.
 
 4. **Methodological takeaway.** Short-epoch ablations are systematically misleading on this task. A study comparing loss recipes for Cityscapes at ≤ 20 epochs reverses the ranking that holds at 160 epochs. Loss-recipe decisions should be made on at least 80–100 epochs of training.
 
-→ For a deployed Cityscapes model: D is the pragmatic default — simplest of the four (no Dice plumbing, no hyperparameter), highest mean mIoU (significantly above C, tied with plain CE), predictable on large structured classes. If thin classes dominate the use case, prefer B (significant Trimap lead).
+→ For a deployed Cityscapes model: D is the pragmatic default — simplest of the four (no Dice plumbing, no hyperparameter), highest mean mIoU (significantly above C, tied with plain CE), predictable on large structured classes. If near-boundary region coherence (Trimap IoU) or thin signal-rich classes matter more, prefer a Dice variant (B or C — significant Trimap lead, ≈ +1.6 over the non-Dice variants).
 
 ---
 
@@ -90,25 +90,27 @@ Combine as `loss = ce(logits, target) + 0.2 * kervadec_boundary_loss(logits, sdt
 ├── scripts/                Training, evaluation, aggregation
 │   ├── train.py            Main training script (Hydra config, BF16, auto-resume)
 │   ├── evaluate.py         Per-checkpoint offline evaluation (corrected per-class metrics)
+│   ├── reeval_official.py  Re-eval: official cityscapesscripts mIoU + corrected contour
+│   ├── aggregate_official.py   Corrected tables (Student-t CI + Holm tests) from the re-eval
 │   ├── evaluate_consensus.py   Multi-seed vote + variant-pair CC veto evaluation
 │   └── aggregate_results.py
 ├── src/                    Corrected metric + consensus code (self-contained)
 │   ├── metrics/segmentation_metrics.py   mIoU + per-class Boundary F1 / Trimap IoU
 │   └── postprocessing/consensus.py       CC consensus filter (BRATS-adapted)
 ├── tests/
-│   └── test_metrics_consensus.py   Synthetic unit tests (19/19) for the fixes
+│   ├── test_metrics_consensus.py   Synthetic unit tests (19/19) for the metric/consensus fixes
+│   └── test_official_miou.py       mIoU == official cityscapesscripts (bit-for-bit)
 ├── data/                   Per-run CSV exports (no raw data)
-│   └── pilot_results.csv   (variant, seed, epoch) -> (mIoU, boundary_f1, trimap)
-│                           for 12 runs (4 variants × 3 seeds)
+│   ├── pilot_results.csv   (variant, seed, epoch) -> (mIoU, boundary_f1, trimap), per epoch
+│   └── pilot_results_official.csv   epoch-160 official mIoU + corrected contour + per-class
 └── figures/                Paper figures + generation/aggregation scripts
-    ├── fig_convergence.{png,pdf}    mIoU / Bnd F1 / Trimap per epoch, 95% CI †
+    ├── fig_convergence.{png,pdf}    Per-epoch mIoU, 95% Student-t CI
     ├── fig_perclass.{png,pdf}       Per-class IoU at epoch 160, 4 variants
-    ├── table_final.csv               Global metrics + Student-t 95% CI at epoch 160
-    ├── table_significance.csv        Paired-by-seed t-tests (key comparisons)
-    ├── table_perclass.csv            Per-class IoU + std at epoch 160
-    ├── aggregate_stats.py            Rebuild final + significance tables from the CSV
-    └── generate_figures.py           Regenerate figures from .results.json
-                                      († fig_convergence pending regen — see CHANGELOG)
+    ├── table_final.csv               Global metrics + Student-t 95% CI at epoch 160 (corrected)
+    ├── table_significance.csv        Holm-corrected paired-by-seed t-tests (all pairs)
+    ├── table_perclass.csv            Per-class IoU + std at epoch 160 (official)
+    ├── aggregate_stats.py            (legacy) rebuild tables from a per-epoch CSV
+    └── generate_figures.py           (legacy) 3-panel figures from .results.json
 ```
 
 Cityscapes raw images are **not** redistributed (Cityscapes Dataset Terms of Use). Obtain them from [cityscapes-dataset.com](https://www.cityscapes-dataset.com/).

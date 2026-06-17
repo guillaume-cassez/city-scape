@@ -13,7 +13,7 @@ url: "https://guillaume-cassez.fr/voiture-autonome/cityscapes/boundary-loss-kerv
 doi: 10.5281/zenodo.20528680
 version: 0.2.0
 license: MIT
-date-released: "2026-06-16"
+date-released: "2026-06-17"
 keywords:
   - Cityscapes
   - semantic segmentation
@@ -35,13 +35,15 @@ abstract: >-
   C: CE+Dice+Boundary, D: CE+Boundary, each x 3 seeds x 160 epochs). At epoch 10
   the joint variant C leads (+2.26 mIoU over B in the mean); at epoch 160 the
   boundary-only variant D has the highest mean mIoU (81.69 +/- 0.25) and Boundary
-  F1 (58.67 +/- 0.24), while B keeps a significant Trimap IoU lead (49.02 +/-
-  0.61). Under a paired-by-seed t-test (n=3), D significantly beats the joint
-  variant C (p=0.007) but is statistically tied with plain CE (A); the most
-  actionable finding is methodological -- short-epoch ablations reverse the
-  converged ranking. Version 0.2.0 corrects two estimator issues present in
+  F1 (77.32 +/- 0.13). Under a paired-by-seed t-test (n=3, Holm-corrected), D
+  significantly beats the joint variant C (p=0.007) but is statistically tied with
+  plain CE (A); the two contour metrics split along the Dice axis (non-Dice
+  variants A, D lead Boundary F1; Dice variants B, C lead Trimap IoU by ~1.6).
+  The most actionable finding is methodological -- short-epoch ablations reverse
+  the converged ranking. Version 0.2.0 corrects two estimator issues present in
   v0.1.0 (Boundary F1 / Trimap IoU are now computed per class instead of
-  road-vs-rest; 95% confidence intervals use the Student-t factor instead of
-  1.96) and adds a connected-component consensus filter adapted from BRATS. The
-  mIoU numbers are final; Boundary F1 / Trimap central values are pending
-  re-evaluation with the corrected metric. See CHANGELOG.md for the full erratum.
+  road-vs-rest, and all twelve runs were re-evaluated; 95% confidence intervals
+  use the Student-t factor instead of 1.96, with Holm-corrected significance) and
+  adds a connected-component consensus filter adapted from BRATS. The mIoU is
+  validated bit-for-bit against the official cityscapesscripts. See CHANGELOG.md
+  for the full erratum.

@@ -49,10 +49,15 @@ class SegmentationMetrics:
 
     def compute(self) -> Dict[str, float]:
         cm = self.confusion_matrix
-        intersection = np.diag(cm)
-        union = cm.sum(axis=1) + cm.sum(axis=0) - intersection
-        iou = intersection / (union + 1e-6)
-        valid = union > 0  # classes absent from the whole set are excluded
+        intersection = np.diag(cm).astype(np.float64)
+        union = (cm.sum(axis=1) + cm.sum(axis=0) - np.diag(cm)).astype(np.float64)
+        valid = union > 0  # classes absent from the whole set are excluded (official convention)
+        # Exact IoU = TP/(TP+FP+FN) per class, bit-for-bit identical to the official
+        # cityscapesScripts definition (validated in tests/test_official_miou.py against
+        # cityscapesscripts.evaluation.getIouScoreForLabel). No epsilon smoothing: the
+        # `valid` mask already excludes union==0, so the previous `+1e-6` in the
+        # denominator was redundant and biased the value away from the official metric.
+        iou = np.divide(intersection, union, out=np.zeros_like(union), where=valid)
         miou = iou[valid].mean() if valid.any() else 0.0
         return {
             "mIoU": float(miou),

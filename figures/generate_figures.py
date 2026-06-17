@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate paper figures from per-checkpoint .results.json files.
 
-Outputs (papers/paper1/figures/):
+Outputs (papers/paper2/figures/):
 - fig_convergence.png  : mIoU / Bnd F1 / Trimap per epoch, 4 variants, 95% CI
 - fig_perclass.png     : per-class IoU at epoch 160, 4 variants, sorted by Δ(D-B)
 - table_perclass.csv   : per-class IoU mean across seeds at epoch 160
@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 CKPT_ROOT = Path("/media/ser/T7/City_Scape/checkpoints")
-OUT_DIR = Path("/home/ser/Bureau/City_Scape/papers/paper1/figures")
+OUT_DIR = Path("/home/ser/Bureau/City_Scape/papers/paper2/figures")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 VARIANTS = {
