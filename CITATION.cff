@@ -11,9 +11,9 @@ authors:
 repository-code: "https://github.com/guillaume-cassez/city-scape"
 url: "https://guillaume-cassez.fr/voiture-autonome/cityscapes/boundary-loss-kervadec/"
 doi: 10.5281/zenodo.20528680
-version: 0.2.0
+version: 0.2.1
 license: MIT
-date-released: "2026-06-17"
+date-released: "2026-06-18"
 keywords:
   - Cityscapes
   - semantic segmentation
@@ -44,6 +44,6 @@ abstract: >-
   v0.1.0 (Boundary F1 / Trimap IoU are now computed per class instead of
   road-vs-rest, and all twelve runs were re-evaluated; 95% confidence intervals
   use the Student-t factor instead of 1.96, with Holm-corrected significance) and
-  adds a connected-component consensus filter adapted from BRATS. The mIoU is
+  adds a connected-component consensus filter adapted from BRATS, quantified in v0.2.1 (variant-pair veto: -18.6% fragments at no mIoU cost). The mIoU is
   validated bit-for-bit against the official cityscapesscripts. See CHANGELOG.md
   for the full erratum.

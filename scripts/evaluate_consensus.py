@@ -87,24 +87,30 @@ def predict_all(model, loader, device):
     return out
 
 
+_LEAN = {"on": False}  # set from --lean: skip the heavy per-image Boundary F1 / Trimap loop
+
+
 def score(pred_label_pairs):
-    """Compute mIoU / Boundary F1 / Trimap / fragment count over a list of (pred,label)."""
+    """mIoU + fragment count over (pred,label) pairs; also Boundary F1 / Trimap unless --lean.
+
+    The consensus claims (§5.5) are Delta mIoU + Delta fragment count + agreement, so --lean
+    drops the expensive contour metrics and keeps just what the consensus section reports.
+    """
     m = SegmentationMetrics(num_classes=NUM_CLASSES)
     bf1s, tris, frags = [], [], []
     for pred, label in pred_label_pairs:
         m.update(torch.from_numpy(pred[None].astype(np.int64)),
                  torch.from_numpy(label[None].astype(np.int64)))
-        bf1s.append(compute_boundary_f1(pred, label)["boundary_f1"])
-        tris.append(compute_trimap_iou(pred, label)["trimap_mIoU"])
-        fc = count_fragments(pred)
-        frags.append(sum(fc.values()))
+        if not _LEAN["on"]:
+            bf1s.append(compute_boundary_f1(pred, label)["boundary_f1"])
+            tris.append(compute_trimap_iou(pred, label)["trimap_mIoU"])
+        frags.append(sum(count_fragments(pred).values()))
     res = m.compute()
-    return {
-        "mIoU": res["mIoU"],
-        "boundary_f1_mean": float(np.mean(bf1s)),
-        "trimap_mIoU_mean": float(np.mean(tris)),
-        "fragments_mean": float(np.mean(frags)),
-    }
+    out = {"mIoU": res["mIoU"], "fragments_mean": float(np.mean(frags))}
+    if not _LEAN["on"]:
+        out["boundary_f1_mean"] = float(np.mean(bf1s))
+        out["trimap_mIoU_mean"] = float(np.mean(tris))
+    return out
 
 
 def main():
@@ -115,7 +121,10 @@ def main():
     ap.add_argument("--max-drop-size", type=int, default=None,
                     help="pair mode: only drop fragments up to N px (default: any)")
     ap.add_argument("--out", default="results/consensus_results.json")
+    ap.add_argument("--lean", action="store_true",
+                    help="skip Boundary F1 / Trimap; keep mIoU + fragments (+ agreement) — ~10x faster")
     args = ap.parse_args()
+    _LEAN["on"] = args.lean
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     set_seed(42)

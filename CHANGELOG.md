@@ -6,6 +6,22 @@ the concept DOI [10.5281/zenodo.20528680](https://doi.org/10.5281/zenodo.2052868
 always resolves to the latest version. Earlier version DOIs remain permanently
 citable.
 
+## v0.2.1 — 2026-06-18 (consensus filter quantified)
+
+Adds the val-set numbers for the §5.5 connected-component consensus filter, which
+v0.2.0 released as code only ("no numerical claim"). No other change — mIoU, contour
+metrics and the methodological finding are identical to v0.2.0.
+
+- **Variant-pair veto (D vetoed by B):** −18.6 % connected-component fragments
+  (782.6 → 636.8 per image; paired p = 0.008, consistent across all three seeds) at
+  **no mIoU cost** (81.69 → 81.65; Δ = −0.03 pp, p = 0.50) — a spatial-coherence gain,
+  not an mIoU gain; the direct analogue of the BRATS Baseline-vetoes-DistMap rule.
+- §5.5, abstract contribution (4) and §6.4 updated with these numbers.
+  `scripts/evaluate_consensus.py --lean` reproduces them from the trained checkpoints.
+- The multi-seed seed-vote an earlier §5.5 draft proposed is **dropped**: it ensembles
+  the 3 seeds instead of treating them as statistical replicates, has no BRATS
+  equivalent, and its gain is plain ensembling (×3 inference), not the consensus filter.
+
 ## v0.2.0 — 2026-06-17 (erratum: re-evaluated contour metrics + official mIoU validation + consensus filter)
 
 This is a **correction release**. Two estimator issues found in v0.1.0 after
@@ -85,8 +101,8 @@ official `cityscapesscripts` evaluation.**
 
 ### Still pending (deferred)
 
-- **Consensus filter quantitative results.** The §5.5 filter has a verified
-  implementation and unit tests (19/19) but no val-set numbers yet.
+- **Consensus filter quantitative results** — **done in v0.2.1** (variant-pair veto:
+  −18.6 % fragments at no mIoU cost).
 
 ### Added — consensus filter
 
