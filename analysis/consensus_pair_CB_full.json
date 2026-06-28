@@ -1,0 +1,74 @@
+{
+  "mode": "pair",
+  "primary": "C",
+  "veto": "B",
+  "per_seed": [
+    {
+      "primary": {
+        "mIoU": 0.8131366955264439,
+        "fragments_mean": 615.342,
+        "boundary_f1_mean": 0.7632499162399808,
+        "trimap_mIoU_mean": 0.5385322572974699
+      },
+      "veto": {
+        "mIoU": 0.8142921042573332,
+        "fragments_mean": 647.956,
+        "boundary_f1_mean": 0.7637274550108061,
+        "trimap_mIoU_mean": 0.5396526231820861
+      },
+      "fused": {
+        "mIoU": 0.812715938567829,
+        "fragments_mean": 500.612,
+        "boundary_f1_mean": 0.7623890012893522,
+        "trimap_mIoU_mean": 0.5389664503896434
+      }
+    },
+    {
+      "primary": {
+        "mIoU": 0.8122217225361849,
+        "fragments_mean": 549.738,
+        "boundary_f1_mean": 0.7674467381994861,
+        "trimap_mIoU_mean": 0.5409044385464654
+      },
+      "veto": {
+        "mIoU": 0.8086138156135209,
+        "fragments_mean": 590.528,
+        "boundary_f1_mean": 0.7649389118734721,
+        "trimap_mIoU_mean": 0.5382023175226184
+      },
+      "fused": {
+        "mIoU": 0.8125030965351504,
+        "fragments_mean": 456.006,
+        "boundary_f1_mean": 0.7664062487521979,
+        "trimap_mIoU_mean": 0.5414485681798338
+      }
+    },
+    {
+      "primary": {
+        "mIoU": 0.8114433460605412,
+        "fragments_mean": 620.842,
+        "boundary_f1_mean": 0.7643157031541608,
+        "trimap_mIoU_mean": 0.5366119267613342
+      },
+      "veto": {
+        "mIoU": 0.809884282315532,
+        "fragments_mean": 607.528,
+        "boundary_f1_mean": 0.7630892432456734,
+        "trimap_mIoU_mean": 0.536690022962546
+      },
+      "fused": {
+        "mIoU": 0.8118735961867115,
+        "fragments_mean": 495.658,
+        "boundary_f1_mean": 0.7631099393205724,
+        "trimap_mIoU_mean": 0.5373868370456607
+      }
+    }
+  ],
+  "fused_mean": {
+    "mIoU": 0.812364210429897,
+    "fragments_mean": 484.0919999999999,
+    "boundary_f1_mean": 0.7639683964540408,
+    "trimap_mIoU_mean": 0.539267285205046
+  },
+  "elapsed_s": 8387.1
+}

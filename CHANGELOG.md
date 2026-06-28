@@ -6,6 +6,47 @@ the concept DOI [10.5281/zenodo.20528680](https://doi.org/10.5281/zenodo.2052868
 always resolves to the latest version. Earlier version DOIs remain permanently
 citable.
 
+## v0.2.2 — 2026-06-19 (primary image-bootstrap + BRATS-faithful canonical consensus C⊘B)
+
+The **complete and final** consensus characterisation, plus a pre-specified primary
+significance test for mIoU. The mIoU table values are unchanged from v0.2.0; this revision
+fixes the *framing* of the significance and the consensus analogy. After this version paper2
+is frozen (new DOIs only for a genuine later erratum).
+
+- **mIoU significance — paired image-bootstrap is now the pre-specified primary test.**
+  Over the 500 val images (resample with replacement, B = 10 000, recompute the dataset-level
+  Δ mIoU per replicate, 95 % CI = pct 2.5/97.5, two-sided p; `analysis/bootstrap_miou.json`).
+  Under Holm, **D > B (Δ = +0.59, p = 0.032) and D > A (Δ = +0.40, p = 0.043) are significant**;
+  D > C (raw p = 0.023) is **not** significant after Holm (p = 0.092). The 3-seed paired-t test is
+  kept as the **robustness layer** (a different variance source — the training seed) and there
+  D > C is significant (Holm p = 0.042). The two tests jointly support every "D > {A, B, C}";
+  §4.2 now states the primary-endpoint and bootstrap protocol explicitly, §5.1 reports both
+  tests side by side.
+- **Consensus re-anchored on the BRATS-faithful canonical pairing C⊘B.** This **corrects the
+  v0.2.1 "direct analogue" claim**, which used D⊘B: in BRATS the veto is the field-standard
+  baseline (`DC_and_CE` = Dice + CE = nnU-Net default) and the pruned generalist (DistMap) *also*
+  keeps Dice + CE, so the faithful transcription is a Dice + CE generalist vetoed by the Dice + CE
+  baseline. We make explicit that **the baseline is B (CE + Dice = nnU-Net default)**; A (CE) and
+  D (CE + Kervadec, no Dice) are Cityscape-specific Dice-axis ablations with no BRATS equivalent.
+  D⊘B (used in v0.2.1) had veto B = baseline but generalist D ≠ a Dice variant, so it was *not* the
+  direct analogue. The canonical consensus is now **C⊘B**.
+- **Full consensus ablation matrix + the veto's boundary-quality effect are now reported** (the
+  v0.2.1 "Δ Boundary F1 / Trimap not yet measured" limitation is closed). All four pairings (mean
+  over 3 seeds, `analysis/consensus_matrix.json`): C⊘B +0.010 pp mIoU / −18.7 % fragments; D⊘B
+  −0.033 pp / −18.6 %; C⊘A +0.085 pp / −8.5 %; D⊘A +0.137 pp / −15.6 % — the baseline veto B prunes
+  ≈ 2× more fragments than the CE-only veto A. **C⊘B full characterisation**
+  (`analysis/consensus_pair_CB_full.json`, `analysis/bootstrap_consensus_CB.json`): mIoU neutral
+  (paired p = 0.747; image-bootstrap Δ = −0.01, p = 0.86), fragments −18.7 % (−111/img, p = 0.007),
+  Boundary F1 −0.104 pp (p = 0.009) and Trimap IoU +0.058 pp (p = 0.028) — both significant at n = 3
+  but < 0.1 pp, i.e. practically negligible → a **pure spatial-coherence cleanup, boundary-neutral**.
+  **D⊘B** (`analysis/consensus_pair_DB_full.json`): same prune and mIoU-neutrality (image-bootstrap
+  Δ = +0.03, p = 0.66) **but a Dice-axis shift** (Boundary F1 −0.691 pp, Trimap IoU +0.997 pp, both
+  p < 0.001), because reassigning D's fragments to B's labels Dice-ifies the output (D and B are on
+  opposite ends of the Dice axis). So C⊘B is the *pure* consensus; D⊘B conflates fragment-cleanup
+  with a Dice shift. Abstract contribution (4), §5.5 and §6.4 updated accordingly.
+- This is the **complete, final consensus characterisation**; the n = 3 seed-level caveat on the
+  contour deltas is retained.
+
 ## v0.2.1 — 2026-06-18 (consensus filter quantified)
 
 Adds the val-set numbers for the §5.5 connected-component consensus filter, which

@@ -1,0 +1,38 @@
+{
+  "test": "paired image-bootstrap (dataset-level mIoU, seed-mean), two-sided",
+  "n_val": 500,
+  "B": 10000,
+  "seeds": [
+    42,
+    123,
+    456
+  ],
+  "variants": [
+    "D",
+    "fused_DvetoB"
+  ],
+  "point_miou": {
+    "D": 0.8168719561954066,
+    "fused_DvetoB": 0.8165231923756028
+  },
+  "miou_ci95": {
+    "D": [
+      0.8036610150058713,
+      0.827358812151087
+    ],
+    "fused_DvetoB": [
+      0.8031313064105262,
+      0.8271914074180265
+    ]
+  },
+  "pairwise": {
+    "D_vs_fused_DvetoB": {
+      "delta_miou": 0.0003487638198038656,
+      "ci95": [
+        -0.001191122795065011,
+        0.0021260557261902372
+      ],
+      "p_two_sided": 0.6604
+    }
+  }
+}
