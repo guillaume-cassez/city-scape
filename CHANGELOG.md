@@ -8,6 +8,8 @@ citable.
 
 ## v0.2.2 — 2026-06-19 (primary image-bootstrap + BRATS-faithful canonical consensus C⊘B)
 
+Version DOI: [10.5281/zenodo.21006393](https://doi.org/10.5281/zenodo.21006393) (published 2026-06-28).
+
 The **complete and final** consensus characterisation, plus a pre-specified primary
 significance test for mIoU. The mIoU table values are unchanged from v0.2.0; this revision
 fixes the *framing* of the significance and the consensus analogy. After this version paper2
